@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import axios from 'axios';
 import { Repository } from 'typeorm';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { VerifyDto } from './dto/verify.dto';
 import { ExpenseEntity } from './entity/expense.entity';
 import { IncomeEntity } from './entity/income.entity';
+import { configService, Key } from './environment/config.service';
 import { IResponses } from './interface';
+import toShowCurrency from './lib/currency';
 
 @Injectable()
 export class AppService {
@@ -87,6 +90,41 @@ export class AppService {
 
       let new_transaction = await this.incomeEntity.save(income);
       console.log(new_transaction);
+
+      //Noti
+      let text =
+        '\n' +
+        '=== แจ้งเตือนรับยอด 🟢 ===' +
+        '\n\n' +
+        `UID:  ${new_transaction.id}` +
+        '\n\n' +
+        `รับเงินจาก:  ${new_transaction.transferor_name}` +
+        '\n' +
+        `ยอดเงิน:  ${toShowCurrency(new_transaction.amount)} ฿` +
+        '\n\n' +
+        `หมายเหตุ:  ${new_transaction.remark}` +
+        '\n\n' +
+        `ผู้แจ้ง:  ${new_transaction.reporter}` +
+        '\n\n' +
+        `==================`;
+
+      let url = configService.getValue(Key.URL_LINE_NOTIFY);
+      let body = {
+        message: text,
+      };
+      let config = {
+        headers: {
+          Authorization: `Bearer ${configService.getValue(
+            Key.LINE_NOTI_TOKEN,
+          )}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      };
+      let result_noti = await axios.post(url, body, config);
+      if (result_noti.data.status == 200) {
+        console.log('Notify income Success');
+      }
+
       return {
         result: true,
         status: 201,
@@ -115,6 +153,45 @@ export class AppService {
 
       let new_transaction = await this.expenseEntity.save(expense);
       console.log(new_transaction);
+
+      //Noti
+      let text =
+        '\n' +
+        '=== แจ้งเตือนเบิกเงิน 🔴 ===' +
+        '\n\n' +
+        `UID:  ${new_transaction.id}` +
+        '\n\n' +
+        `เบิกค่า :  ${new_transaction.type}` +
+        '\n\n' +
+        `ผู้รับเงิน :  ${new_transaction.receiver_name}` +
+        '\n' +
+        `บัญชีผู้รับ :  ${new_transaction.receiver_bank}` +
+        '\n' +
+        `จำนวนเงินที่ขอเบิก:  ${toShowCurrency(new_transaction.amount)} ฿` +
+        '\n\n' +
+        `หมายเหตุ:  ${new_transaction.remark}` +
+        '\n\n' +
+        `ผู้แจ้ง:  ${new_transaction.reporter}` +
+        '\n\n' +
+        `==================`;
+
+      let url = configService.getValue(Key.URL_LINE_NOTIFY);
+      let body = {
+        message: text,
+      };
+      let config = {
+        headers: {
+          Authorization: `Bearer ${configService.getValue(
+            Key.LINE_NOTI_TOKEN,
+          )}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      };
+      let result_noti = await axios.post(url, body, config);
+      if (result_noti.data.status == 200) {
+        console.log('Notify expense Success');
+      }
+
       return {
         result: true,
         status: 201,
