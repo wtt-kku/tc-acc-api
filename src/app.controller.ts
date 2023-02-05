@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { CreateIncomeDto } from './dto/create-income.dto';
+import { GetdataDto } from './dto/get-data.dto';
 import { VerifyDto } from './dto/verify.dto';
 
 @Controller()
@@ -14,8 +15,13 @@ export class AppController {
   }
 
   @Post('/incomes')
-  getIncome() {
-    return this.appService.getIncome();
+  getIncome(@Body() getdataDto: GetdataDto) {
+    return this.appService.getIncome(getdataDto);
+  }
+
+  @Post('/expenses-td')
+  getExpenseTD(@Body() getdataDto: GetdataDto) {
+    return this.appService.getExpenseTD(getdataDto);
   }
 
   @Post('/expenses')
@@ -42,4 +48,9 @@ export class AppController {
   verifyExpense(@Body() verifyDto: VerifyDto) {
     return this.appService.verifyExpense(verifyDto);
   }
+
+  // @Post('/debug')
+  // debug(@Body() getdataDto: GetdataDto) {
+  //   return this.appService.getIncome(getdataDto);
+  // }
 }

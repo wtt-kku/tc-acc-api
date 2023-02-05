@@ -10,6 +10,8 @@ import { IncomeEntity } from './entity/income.entity';
 import { configService, Key } from './environment/config.service';
 import { IResponses } from './interface';
 import toShowCurrency from './lib/currency';
+import * as moment from 'moment';
+import { GetdataDto } from './dto/get-data.dto';
 
 @Injectable()
 export class AppService {
@@ -28,37 +30,43 @@ export class AppService {
     };
   }
 
-  async getIncome(): Promise<IResponses> {
-    try {
-      let incomes = await this.incomeEntity.find({
-        order: {
-          create_date: 'DESC',
-        },
-      });
+  // async getIncome(): Promise<IResponses> {
+  //   try {
+  //     let incomes = await this.incomeEntity.find({
+  //       order: {
+  //         create_date: 'DESC',
+  //       },
+  //     });
 
-      return {
-        result: true,
-        status: 200,
-        message: 'Load success',
-        data: incomes,
-      };
-    } catch (error) {
-      console.log(error);
-      return {
-        result: false,
-        status: 500,
-        message: 'Internal Error',
-      };
-    }
-  }
+  //     return {
+  //       result: true,
+  //       status: 200,
+  //       message: 'Load success',
+  //       data: incomes,
+  //     };
+  //   } catch (error) {
+  //     console.log(error);
+  //     return {
+  //       result: false,
+  //       status: 500,
+  //       message: 'Internal Error',
+  //     };
+  //   }
+  // }
 
   async getExpense(): Promise<IResponses> {
     try {
-      let expenses = await this.expenseEntity.find({
-        order: {
-          create_date: 'DESC',
-        },
-      });
+      let dateCurrent = new Date();
+      let expenses = await this.expenseEntity
+        .createQueryBuilder('ic')
+        .where('ic.create_date >= :after', {
+          after: moment(dateCurrent).startOf('month').format('YYYY-MM-DD'),
+        })
+        .andWhere('ic.create_date <= :before', {
+          before: moment(dateCurrent).endOf('month').format('YYYY-MM-DD'),
+        })
+        .orderBy('ic.create_date', 'DESC')
+        .getMany();
 
       return {
         result: true,
@@ -287,6 +295,110 @@ export class AppService {
         result: true,
         status: 200,
         message: 'Verify expense success',
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        result: false,
+        status: 500,
+        message: 'Internal Error',
+      };
+    }
+  }
+
+  async getIncome(getdataDto: GetdataDto): Promise<IResponses> {
+    try {
+      var dateCurrent = new Date();
+
+      if (getdataDto.date) {
+        dateCurrent = getdataDto.date;
+      }
+
+      let obj = {
+        after: moment(dateCurrent).startOf('month').format('YYYY-MM-DD'),
+        before: moment(dateCurrent).endOf('month').format('YYYY-MM-DD'),
+      };
+
+      let incomes = await this.incomeEntity
+        .createQueryBuilder('ic')
+        .where('ic.transaction_date >= :after', {
+          after: moment(dateCurrent).startOf('month').format('YYYY-MM-DD'),
+        })
+        .andWhere('ic.transaction_date <= :before', {
+          before: moment(dateCurrent).endOf('month').format('YYYY-MM-DD'),
+        })
+        .orderBy('ic.create_date', 'DESC')
+        .getMany();
+
+      let success_summary = 0;
+      let all_summary = 0;
+      incomes.forEach((item) => {
+        all_summary += Number(item.amount);
+        if (item.verified) {
+          success_summary += Number(item.amount);
+        }
+      });
+
+      const resData = {
+        all_summary: all_summary,
+        success_summary: success_summary,
+        records: incomes || [],
+      };
+
+      return {
+        result: true,
+        status: 200,
+        message: 'Load success',
+        data: resData,
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        result: false,
+        status: 500,
+        message: 'Internal Error',
+      };
+    }
+  }
+
+  async getExpenseTD(getdataDto: GetdataDto): Promise<IResponses> {
+    try {
+      var dateCurrent = new Date();
+
+      if (getdataDto.date) {
+        dateCurrent = getdataDto.date;
+      }
+
+      let incomes = await this.expenseEntity
+        .createQueryBuilder('ep')
+        .where('ep.transaction_date >= :after', {
+          after: moment(dateCurrent).startOf('month').format('YYYY-MM-DD'),
+        })
+        .andWhere('ep.transaction_date <= :before', {
+          before: moment(dateCurrent).endOf('month').format('YYYY-MM-DD'),
+        })
+        .getMany();
+
+      let success_summary = 0;
+      let all_summary = 0;
+      incomes.forEach((item) => {
+        all_summary += Number(item.amount);
+        if (item.verified) {
+          success_summary += Number(item.amount);
+        }
+      });
+
+      const resData = {
+        all_summary: all_summary,
+        success_summary: success_summary,
+        records: incomes || [],
+      };
+
+      return {
+        result: true,
+        status: 200,
+        message: 'Load success',
+        data: resData,
       };
     } catch (error) {
       console.log(error);
