@@ -16,7 +16,7 @@ export class IncomeEntity extends BaseColumnEntity {
   amount: number;
 
   @Column({ type: 'timestamp', nullable: false })
-  transaction_date: Date;
+  transaction_date: string;
 
   @Column({ nullable: false })
   time: string;

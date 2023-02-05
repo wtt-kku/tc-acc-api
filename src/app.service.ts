@@ -91,7 +91,9 @@ export class AppService {
       income.transferor_bank = createIncomeDto.transferor_bank;
       income.method = createIncomeDto.method;
       income.amount = createIncomeDto.amount;
-      income.transaction_date = new Date(createIncomeDto.transaction_date);
+      income.transaction_date = new Date(
+        createIncomeDto.transaction_date,
+      ).toISOString();
       income.time = createIncomeDto.time;
       income.remark = createIncomeDto.remark || '';
       income.reporter = createIncomeDto.reporter;
