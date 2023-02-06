@@ -87,6 +87,8 @@ export class AppService {
   async createIncome(createIncomeDto: CreateIncomeDto): Promise<IResponses> {
     try {
       let income = new IncomeEntity();
+      income.create_date = new Date();
+      income.update_date = new Date();
       income.transferor_name = createIncomeDto.transferor_name;
       income.transferor_bank = createIncomeDto.transferor_bank;
       income.method = createIncomeDto.method;
@@ -160,6 +162,8 @@ export class AppService {
       expense.amount = createExpenseDto.amount;
       expense.remark = createExpenseDto.remark || '';
       expense.reporter = createExpenseDto.reporter;
+      expense.create_date = new Date();
+      expense.update_date = new Date();
 
       let new_transaction = await this.expenseEntity.save(expense);
       console.log(new_transaction);
