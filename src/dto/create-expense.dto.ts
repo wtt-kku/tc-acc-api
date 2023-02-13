@@ -22,6 +22,10 @@ export class CreateExpenseDto {
   @IsNotEmpty()
   receiver_bank: string;
 
+  @IsString()
+  @IsNotEmpty()
+  receiver_bank_no: string;
+
   @IsNumber()
   @IsNotEmpty()
   amount: number;

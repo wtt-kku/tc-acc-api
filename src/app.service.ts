@@ -12,6 +12,8 @@ import { IResponses } from './interface';
 import toShowCurrency from './lib/currency';
 import * as moment from 'moment';
 import { GetdataDto } from './dto/get-data.dto';
+import removeVat from './lib/remove-vat';
+import { VerifyExpenseDto } from './dto/verify-expense.dto';
 
 @Injectable()
 export class AppService {
@@ -159,6 +161,7 @@ export class AppService {
       expense.type = createExpenseDto.type;
       expense.receiver_name = createExpenseDto.receiver_name;
       expense.receiver_bank = createExpenseDto.receiver_bank;
+      expense.receiver_bank_no = createExpenseDto.receiver_bank_no;
       expense.amount = createExpenseDto.amount;
       expense.remark = createExpenseDto.remark || '';
       expense.reporter = createExpenseDto.reporter;
@@ -232,7 +235,7 @@ export class AppService {
         return {
           result: false,
           status: 400,
-          message: 'Not Found Expense',
+          message: 'Not found income',
         };
       }
 
@@ -267,17 +270,17 @@ export class AppService {
     }
   }
 
-  async verifyExpense(verifyDto: VerifyDto): Promise<IResponses> {
+  async verifyExpense(verifyExpenseDto: VerifyExpenseDto): Promise<IResponses> {
     try {
       const expense = await this.expenseEntity.findOneBy({
-        id: verifyDto.id,
+        id: verifyExpenseDto.id,
       });
 
       if (!expense) {
         return {
           result: false,
           status: 400,
-          message: 'Not Found Income',
+          message: 'Not found expense',
         };
       }
 
@@ -290,9 +293,15 @@ export class AppService {
       }
 
       expense.verified = true;
+      expense.transaction_date = new Date(
+        verifyExpenseDto.transaction_date,
+      ).toISOString();
+
+      expense.time = verifyExpenseDto.time;
+
       await this.expenseEntity.update(
         {
-          id: verifyDto.id,
+          id: verifyExpenseDto.id,
         },
         expense,
       );
@@ -320,10 +329,10 @@ export class AppService {
         dateCurrent = getdataDto.date;
       }
 
-      let obj = {
-        after: moment(dateCurrent).startOf('month').format('YYYY-MM-DD'),
-        before: moment(dateCurrent).endOf('month').format('YYYY-MM-DD'),
-      };
+      // let obj = {
+      //   after: moment(dateCurrent).startOf('month').format('YYYY-MM-DD'),
+      //   before: moment(dateCurrent).endOf('month').format('YYYY-MM-DD'),
+      // };
 
       let incomes = await this.incomeEntity
         .createQueryBuilder('ic')
@@ -405,6 +414,109 @@ export class AppService {
         status: 200,
         message: 'Load success',
         data: resData,
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        result: false,
+        status: 500,
+        message: 'Internal Error',
+      };
+    }
+  }
+
+  async showMoney(getdataDto: GetdataDto): Promise<IResponses> {
+    try {
+      let dateCurrent = new Date();
+
+      if (getdataDto.date) {
+        dateCurrent = getdataDto.date;
+      }
+
+      let round1 = {
+        start: moment(dateCurrent).startOf('month').format('YYYY-MM-DD'),
+        end: moment(dateCurrent).startOf('month').format('YYYY-MM-09'),
+      };
+
+      let round2 = {
+        start: moment(dateCurrent).startOf('month').format('YYYY-MM-10'),
+        end: moment(dateCurrent).endOf('month').format('YYYY-MM-19'),
+      };
+
+      let round3 = {
+        start: moment(dateCurrent).startOf('month').format('YYYY-MM-20'),
+        end: moment(dateCurrent).endOf('month').format('YYYY-MM-DD'),
+      };
+
+      let incomesRound1 = await this.incomeEntity
+        .createQueryBuilder('ic1')
+        .where('ic1.transaction_date >= :after', {
+          after: round1.start,
+        })
+        .andWhere('ic1.transaction_date <= :before', {
+          before: round1.end,
+        })
+        .orderBy('ic1.create_date', 'DESC')
+        .getMany();
+
+      let incomesRound2 = await this.incomeEntity
+        .createQueryBuilder('ic2')
+        .where('ic2.transaction_date >= :after', {
+          after: round2.start,
+        })
+        .andWhere('ic2.transaction_date <= :before', {
+          before: round2.end,
+        })
+        .orderBy('ic2.create_date', 'DESC')
+        .getMany();
+
+      let incomesRound3 = await this.incomeEntity
+        .createQueryBuilder('ic3')
+        .where('ic3.transaction_date >= :after', {
+          after: round3.start,
+        })
+        .andWhere('ic3.transaction_date <= :before', {
+          before: round3.end,
+        })
+        .orderBy('ic3.create_date', 'DESC')
+        .getMany();
+
+      let successSumR1 = 0;
+      let successSumR2 = 0;
+      let successSumR3 = 0;
+      incomesRound1.forEach((item) => {
+        if (item.verified) {
+          successSumR1 += Number(item.amount);
+        }
+      });
+
+      incomesRound2.forEach((item) => {
+        if (item.verified) {
+          successSumR2 += Number(item.amount);
+        }
+      });
+
+      incomesRound3.forEach((item) => {
+        if (item.verified) {
+          successSumR3 += Number(item.amount);
+        }
+      });
+
+      let res = {
+        sum:
+          removeVat(successSumR1) +
+          removeVat(successSumR2) +
+          removeVat(successSumR3),
+        r1: removeVat(successSumR1),
+        r2: removeVat(successSumR2),
+        r3: removeVat(successSumR3),
+      };
+
+      return {
+        result: true,
+        status: 200,
+        message: 'Load success',
+        data: res,
       };
     } catch (error) {
       console.log(error);

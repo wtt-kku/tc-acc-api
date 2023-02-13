@@ -3,6 +3,7 @@ import { AppService } from './app.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { GetdataDto } from './dto/get-data.dto';
+import { VerifyExpenseDto } from './dto/verify-expense.dto';
 import { VerifyDto } from './dto/verify.dto';
 
 @Controller()
@@ -45,8 +46,13 @@ export class AppController {
   }
 
   @Post('/verify-expense')
-  verifyExpense(@Body() verifyDto: VerifyDto) {
-    return this.appService.verifyExpense(verifyDto);
+  verifyExpense(@Body() verifyExpenseDto: VerifyExpenseDto) {
+    return this.appService.verifyExpense(verifyExpenseDto);
+  }
+
+  @Post('/show-money')
+  showMoney(@Body() getdataDto: GetdataDto) {
+    return this.appService.showMoney(getdataDto);
   }
 
   // @Post('/debug')

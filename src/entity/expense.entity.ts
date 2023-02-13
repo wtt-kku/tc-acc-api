@@ -12,6 +12,9 @@ export class ExpenseEntity extends BaseColumnEntity {
   @Column({ nullable: false })
   receiver_bank: string;
 
+  @Column({ nullable: true })
+  receiver_bank_no: string;
+
   @Column({ type: 'numeric', nullable: false })
   amount: number;
 
