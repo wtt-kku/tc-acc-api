@@ -184,6 +184,8 @@ export class AppService {
         '\n' +
         `บัญชีผู้รับ :  ${new_transaction.receiver_bank}` +
         '\n' +
+        `หมายเลข :  ${new_transaction.receiver_bank_no}` +
+        '\n' +
         `จำนวนเงินที่ขอเบิก:  ${toShowCurrency(new_transaction.amount)} ฿` +
         '\n\n' +
         `หมายเหตุ:  ${new_transaction.remark}` +
